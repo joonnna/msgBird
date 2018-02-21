@@ -9,7 +9,7 @@ import (
 
 var (
 	errMaxRequest = errors.New("Receiving too many requests, throttling")
-	errNoMsg      = errors.New("Bodr contains no message")
+	errNoMsg      = errors.New("Body contains no message")
 )
 
 type receiver struct {
@@ -19,13 +19,13 @@ type receiver struct {
 	gsm     *converter
 }
 
-func newReceiver(msgChan chan *msg) (*Receiver, error) {
-	l, err := net.Listen("tcp", ":")
+func newReceiver(msgChan chan *msg) (*receiver, error) {
+	l, err := net.Listen("tcp", "127.0.0.1:8300")
 	if err != nil {
 		return nil, err
 	}
 
-	return &Receiver{
+	return &receiver{
 		l:       l,
 		msgChan: msgChan,
 		gsm:     newConverter(),
@@ -34,8 +34,6 @@ func newReceiver(msgChan chan *msg) (*Receiver, error) {
 
 func (r *receiver) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
-
-	var msgs []*msg
 
 	m := &msg{}
 

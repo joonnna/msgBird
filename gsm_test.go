@@ -1,5 +1,6 @@
 package bird
 
+/*
 import (
 	"fmt"
 	"math"
@@ -28,3 +29,4 @@ func TestAlignment(t *testing.T) {
 	}
 	fmt.Println(res)
 }
+*/

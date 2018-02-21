@@ -1,8 +1,8 @@
 package bird
 
 type Proxy struct {
-	r *receiver
-	s *sender
+	rec  *receiver
+	send *sender
 }
 
 func NewProxy(key string) (*Proxy, error) {
@@ -19,17 +19,17 @@ func NewProxy(key string) (*Proxy, error) {
 	}
 
 	return &Proxy{
-		r: rec,
-		s: send,
+		rec:  rec,
+		send: send,
 	}, nil
 }
 
 func (p *Proxy) Start() {
-	r.start()
-	s.start()
+	p.rec.start()
+	p.send.start()
 }
 
 func (p *Proxy) Stop() {
-	r.stop()
-	s.stop()
+	p.rec.stop()
+	p.send.stop()
 }

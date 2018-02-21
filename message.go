@@ -20,7 +20,7 @@ var (
 )
 
 type msg struct {
-	Recipient  int    `json:"recipient"`
+	Recipient  string `json:"recipient"`
 	Originator string `json:"originator"`
 	Message    string `json:"message"`
 	gsm        []byte
@@ -30,11 +30,11 @@ type processedMsg struct {
 	originator string
 	recipients []string
 	body       string
-	msgParams  *messagebird.MessageParams
+	params     *messagebird.MessageParams
 }
 
 func (m msg) validate() error {
-	if m.Recipient == 0 {
+	if m.Recipient == "" {
 		return errNoRecipient
 	}
 
@@ -49,15 +49,21 @@ func (m msg) validate() error {
 	return nil
 }
 
-func (m msg) process() []*proccesedMsg {
+func (m msg) process() []*processedMsg {
 	var ret []*processedMsg
 	var splits int
+	var body string
 
 	if len(m.Message) < maxMsgSize {
+		params := &messagebird.MessageParams{
+			Type: "sms",
+		}
+
 		newMsg := &processedMsg{
 			originator: m.Originator,
-			recipient:  fmt.Sprintf("%d", m.Recipient),
-			body:       fmt.Sprintf("%x", m.Message),
+			recipients: []string{m.Recipient},
+			body:       m.Message,
+			params:     params,
 		}
 		return append(ret, newMsg)
 	}
@@ -85,21 +91,27 @@ func (m msg) process() []*proccesedMsg {
 		start := i * maxSplitMsgSize
 		end := (i + 1) * maxSplitMsgSize
 
+		if i == (splits - 1) {
+			body = m.Message[start:]
+		} else {
+			body = m.Message[start:end]
+		}
+
 		params := &messagebird.MessageParams{
 			TypeDetails: make(map[string]interface{}),
 			Type:        "binary",
 			DataCoding:  "plain",
 		}
-		parms.TypeDetails["udh"] = fmt.Sprintf("%x", header)
+		params.TypeDetails["udh"] = fmt.Sprintf("%x", header)
 
 		newMsg := &processedMsg{
-			recipient:  m.Recipient,
+			recipients: []string{m.Recipient},
 			originator: m.Originator,
-			body:       fmt.Sprintf("%x", m.Message[start:end]),
-			msgParams:  params,
+			body:       fmt.Sprintf("%x", body),
+			params:     params,
 		}
 
-		ret[i] = newMsg
+		ret = append(ret, newMsg)
 	}
 
 	return ret

@@ -6,14 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/joonnna/msgBird"
+	"github.com/joonnna/msgbird"
 )
 
 func main() {
 	var key string
 
 	args := flag.NewFlagSet("args", flag.ExitOnError)
-	args.StringVar(&key, "key", "JhVoK80WnKAEk8je4e8RgUykG", "Access key to use when contacting the messagebird api")
+	args.StringVar(&key, "key", "0kMmexo2Q4gnQa2k4pZ2ZJxzO", "Access key to use when contacting the messagebird api")
 	args.Parse(os.Args[1:])
 
 	p, err := bird.NewProxy(key)
@@ -24,7 +24,7 @@ func main() {
 	p.Start()
 
 	ch := make(chan os.Signal, 1)
-	signal.Notify(channel, os.Interrupt, syscall.SIGTERM)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch
 
 	p.Stop()

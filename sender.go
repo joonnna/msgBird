@@ -2,6 +2,7 @@ package bird
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	messagebird "github.com/messagebird/go-rest-api"
@@ -29,13 +30,13 @@ func newSender(msgCh chan *msg, key string) (*sender, error) {
 		return nil, errNoKey
 	}
 
-	return &pusher{
+	return &sender{
 		ticker:      time.NewTicker(time.Second * 1),
 		receiveChan: msgCh,
 		sendChan:    make(chan *processedMsg, cap(msgCh)*2),
 		exitChan:    make(chan bool),
-		client:      messagebird.NewClient(key),
-	}
+		client:      messagebird.New(key),
+	}, nil
 }
 
 func (s *sender) start() {
@@ -44,7 +45,7 @@ func (s *sender) start() {
 }
 
 func (s *sender) stop() {
-	close(p.exitChan)
+	close(s.exitChan)
 }
 
 func (s *sender) receiveLoop() {
@@ -61,7 +62,7 @@ func (s *sender) receiveLoop() {
 				s.sendChan <- p
 			}
 
-		case <-p.exitChan:
+		case <-s.exitChan:
 			return
 		}
 	}
@@ -70,11 +71,11 @@ func (s *sender) receiveLoop() {
 func (s *sender) sendLoop() {
 	for {
 		select {
-		case <-p.ticker.C:
-			m := <-p.sendChan
+		case <-s.ticker.C:
+			m := <-s.sendChan
 
 			s.send(m)
-		case <-p.exitChan:
+		case <-s.exitChan:
 			return
 		}
 	}
@@ -83,6 +84,6 @@ func (s *sender) sendLoop() {
 func (s *sender) send(m *processedMsg) {
 	_, err := s.client.NewMessage(m.originator, m.recipients, m.body, m.params)
 	if err != nil {
-
+		fmt.Println(err)
 	}
 }
