@@ -1,6 +1,8 @@
-package something
+package bird
 
-import "errors"
+import (
+	"errors"
+)
 
 var (
 	errInvalidGsm = errors.New("Not valid gsm")
@@ -16,9 +18,14 @@ func newConverter() *converter {
 	}
 }
 
+// Converts the body to gsm characters, each gsm occupies
+// one byte within the byte slice.
+// The length of the returned slice represents the amount of
+// gsm characters in the message.
+// Returns an error if an invalid gsm character is detected.
 func (c converter) convert(body string) ([]byte, error) {
 	var ret []byte
-	for idx, runVal := range body {
+	for _, runVal := range body {
 		if val, exists := c.table[runVal]; exists {
 			ret = append(ret, val)
 		} else {
