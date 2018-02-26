@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	// Change this to wherever the code is stored.
 	"github.com/joonnna/msgbird"
 )
 
@@ -23,6 +24,7 @@ func main() {
 
 	p.Start()
 
+	// Wait for ctrl-c to exit.
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 	<-ch

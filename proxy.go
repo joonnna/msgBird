@@ -6,6 +6,9 @@ type Proxy struct {
 }
 
 func NewProxy(key string) (*Proxy, error) {
+	// msgCh represents pending messages(not processed yet).
+	// Its size determines how many pending messages are queued
+	// before dropping incoming messages and returning errors.
 	msgCh := make(chan *msg, 1000)
 
 	rec, err := newReceiver(msgCh)
@@ -32,4 +35,8 @@ func (p *Proxy) Start() {
 func (p *Proxy) Stop() {
 	p.rec.stop()
 	p.send.stop()
+}
+
+func (p Proxy) addr() string {
+	return p.rec.addr()
 }

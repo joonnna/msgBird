@@ -9,8 +9,7 @@ import (
 )
 
 var (
-	errNilChan = errors.New("Received channel is nil.")
-	errNoKey   = errors.New("No access key received.")
+	errNoKey = errors.New("No access key received.")
 )
 
 type sender struct {
@@ -30,6 +29,11 @@ func newSender(msgCh chan *msg, key string) (*sender, error) {
 		return nil, errNoKey
 	}
 
+	// We do not want our sending queue to limit throughput,
+	// our msg queue should be responsible for dropping requests
+	// when there are too many already pending.
+	// To ensure this the sending channel is double the size of the
+	// msg channel.
 	return &sender{
 		ticker:      time.NewTicker(time.Second * 1),
 		receiveChan: msgCh,
@@ -58,6 +62,8 @@ func (s *sender) receiveLoop() {
 
 			processed := m.process()
 
+			// Ensures that split messages also follows
+			// the rate limiting
 			for _, p := range processed {
 				s.sendChan <- p
 			}
@@ -71,6 +77,7 @@ func (s *sender) receiveLoop() {
 func (s *sender) sendLoop() {
 	for {
 		select {
+		// Ensures max 1 request per second
 		case <-s.ticker.C:
 			m := <-s.sendChan
 

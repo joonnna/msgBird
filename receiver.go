@@ -10,16 +10,21 @@ import (
 var (
 	errMaxRequest = errors.New("Receiving too many requests, throttling")
 	errNoMsg      = errors.New("Body contains no message")
+	errNilChan    = errors.New("Received nil channel")
 )
 
 type receiver struct {
 	l net.Listener
 
 	msgChan chan *msg
-	gsm     *converter
 }
 
 func newReceiver(msgChan chan *msg) (*receiver, error) {
+	if msgChan == nil {
+		return nil, errNilChan
+	}
+
+	// Change to 0.0.0.0, hostname, or non-loopback IP to expose outside loopback net.
 	l, err := net.Listen("tcp", "127.0.0.1:8300")
 	if err != nil {
 		return nil, err
@@ -28,10 +33,10 @@ func newReceiver(msgChan chan *msg) (*receiver, error) {
 	return &receiver{
 		l:       l,
 		msgChan: msgChan,
-		gsm:     newConverter(),
 	}, nil
 }
 
+// API endpoint is simply "/"
 func (r *receiver) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 
@@ -48,14 +53,6 @@ func (r *receiver) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if len(m.Message) > maxMsgSize {
-		m.gsm, err = r.gsm.convert(m.Message)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-	}
-
 	select {
 	case r.msgChan <- m:
 	default:
@@ -69,4 +66,8 @@ func (r *receiver) start() {
 
 func (r *receiver) stop() {
 	r.l.Close()
+}
+
+func (r receiver) addr() string {
+	return r.l.Addr().String()
 }
